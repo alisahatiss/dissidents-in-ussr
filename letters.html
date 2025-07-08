@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Historical Letters - Dissident Archive</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navigation">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">Dissident Archive</a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Directory</a></li>
+        <li><a href="letters.html" class="nav-link active">Letters</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+        <li><a href="map.html" class="nav-link">Map</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <h1>Historical Letters</h1>
+    
+    <p class="page-intro">
+      Explore original documents that shaped the Soviet dissident movement. These carefully preserved letters represent the courage of individuals who dared to speak truth to power.
+    </p>
+
+    <div class="letter-showcase">
+      <div class="letter-section">
+        <h2>Letter of Twenty-Five Soviet Figures of Science and Culture to CPSU General Secretary L. I. Brezhnev Protesting the Trend toward Justifying the Policies of Stalin</h2>
+        
+        <p class="letter-description">
+          This significant document represents one of the earliest collective protests against the rehabilitation of Stalin's policies. Signed by prominent Soviet intellectuals, scientists, and cultural figures, it marked a crucial moment in the development of organized dissent within the USSR.
+        </p>
+
+        <div class="letter-images">
+          <div class="letter-page">
+            <img src="images/letter-page-1.jpg" alt="First page of the letter to Brezhnev" class="letter-image" onclick="openLightbox(0)">
+            <p class="page-label">Page 1 <span class="click-hint">Click to enlarge</span></p>
+          </div>
+          
+          <div class="letter-page">
+            <img src="images/letter-page-2.jpg" alt="Second page of the letter to Brezhnev" class="letter-image" onclick="openLightbox(1)">
+            <p class="page-label">Page 2 <span class="click-hint">Click to enlarge</span></p>
+          </div>
+          
+          <div class="letter-page">
+            <img src="images/letter-page-3.jpg" alt="Third page of the letter to Brezhnev" class="letter-image" onclick="openLightbox(2)">
+            <p class="page-label">Page 3 <span class="click-hint">Click to enlarge</span></p>
+          </div>
+        </div>
+
+        <div class="letter-info">
+          <div class="info-grid">
+            <div class="info-item">
+              <strong>Date:</strong> 1966
+            </div>
+            <div class="info-item">
+              <strong>Recipients:</strong> CPSU General Secretary L. I. Brezhnev
+            </div>
+            <div class="info-item">
+              <strong>Signatories:</strong> 25 prominent Soviet figures
+            </div>
+            <div class="info-item">
+              <strong>Significance:</strong> Early collective protest against Stalin rehabilitation
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="coming-soon">
+      <h3>More Letters Coming Soon</h3>
+      <p>We are working to digitize and present additional historical documents from our archives. Check back regularly for new additions to this collection.</p>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
+      <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+      <button class="lightbox-nav lightbox-prev" onclick="changePage(-1)">&#10094;</button>
+      <img id="lightbox-image" src="" alt="">
+      <button class="lightbox-nav lightbox-next" onclick="changePage(1)">&#10095;</button>
+      <div class="lightbox-caption">
+        <span id="lightbox-page-info"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const letterImages = [
+      {
+        src: 'images/letter-page-1.jpg',
+        alt: 'First page of the letter to Brezhnev',
+        caption: 'Page 1 - Letter of Twenty-Five Soviet Figures to L. I. Brezhnev'
+      },
+      {
+        src: 'images/letter-page-2.jpg',
+        alt: 'Second page of the letter to Brezhnev',
+        caption: 'Page 2 - Letter of Twenty-Five Soviet Figures to L. I. Brezhnev'
+      },
+      {
+        src: 'images/letter-page-3.jpg',
+        alt: 'Third page of the letter to Brezhnev',
+        caption: 'Page 3 - Letter of Twenty-Five Soviet Figures to L. I. Brezhnev'
+      }
+    ];
+
+    let currentImageIndex = 0;
+
+    function openLightbox(index) {
+      currentImageIndex = index;
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImage = document.getElementById('lightbox-image');
+      const lightboxCaption = document.getElementById('lightbox-page-info');
+      
+      lightboxImage.src = letterImages[index].src;
+      lightboxImage.alt = letterImages[index].alt;
+      lightboxCaption.textContent = letterImages[index].caption;
+      
+      lightbox.style.display = 'flex';
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function closeLightbox() {
+      const lightbox = document.getElementById('lightbox');
+      lightbox.style.display = 'none';
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    function changePage(direction) {
+      currentImageIndex += direction;
+      
+      // Loop around if at the ends
+      if (currentImageIndex >= letterImages.length) {
+        currentImageIndex = 0;
+      } else if (currentImageIndex < 0) {
+        currentImageIndex = letterImages.length - 1;
+      }
+      
+      const lightboxImage = document.getElementById('lightbox-image');
+      const lightboxCaption = document.getElementById('lightbox-page-info');
+      
+      lightboxImage.src = letterImages[currentImageIndex].src;
+      lightboxImage.alt = letterImages[currentImageIndex].alt;
+      lightboxCaption.textContent = letterImages[currentImageIndex].caption;
+    }
+
+    // Close lightbox with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeLightbox();
+      } else if (event.key === 'ArrowLeft') {
+        changePage(-1);
+      } else if (event.key === 'ArrowRight') {
+        changePage(1);
+      }
+    });
+  </script>
+</body>
+</html> 

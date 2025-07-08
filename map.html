@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Map - Dissident Archive</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 600px;
+      width: 100%;
+      margin: 2em 0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .map-controls {
+      margin-bottom: 1em;
+      text-align: center;
+    }
+    
+    .map-info {
+      background: #fff;
+      padding: 1em;
+      border-radius: 8px;
+      margin-bottom: 1em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .leaflet-popup-content {
+      text-align: left;
+      max-width: 250px;
+    }
+    
+    .popup-name {
+      font-weight: bold;
+      font-size: 1.1em;
+      margin-bottom: 0.5em;
+      color: #222;
+    }
+    
+    .popup-original {
+      font-style: italic;
+      color: #666;
+      margin-bottom: 0.5em;
+    }
+    
+    .popup-details {
+      font-size: 0.9em;
+      margin-bottom: 0.3em;
+    }
+    
+    .popup-link {
+      margin-top: 0.5em;
+    }
+    
+    .popup-link a {
+      background-color: #0066cc;
+      color: white;
+      padding: 0.3em 0.6em;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.8em;
+    }
+    
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1em;
+      padding: 0.5em 1em;
+      background-color: #0066cc;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
+    
+    .back-link:hover {
+      background-color: #004499;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navigation">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">Dissident Archive</a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Directory</a></li>
+        <li><a href="letters.html" class="nav-link">Letters</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+        <li><a href="map.html" class="nav-link active">Map</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <h1>Soviet Dissidents Map</h1>
+  
+  <p>
+    Explore the geographical distribution of Soviet-era dissidents across the former USSR.
+  </p>
+  
+  <div class="map-info">
+    <strong>Map Information:</strong> This map shows the locations of dissidents based on the location data in our directory. Click on markers to see detailed information about each person.
+  </div>
+  
+  <div class="map-controls">
+    <div id="loading-message">Loading map data...</div>
+  </div>
+  
+  <div id="map"></div>
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const baseUrl = "https://api.sheetbest.com/sheets/b0fd3d9f-8cb8-43be-baae-dd189eb6dfdd";
+    
+    // Initialize map centered on Soviet Union/Russia
+    const map = L.map('map').setView([55.7558, 37.6173], 4);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // City coordinates mapping (approximate)
+    const cityCoordinates = {
+      'Moscow': [55.7558, 37.6173],
+      'Leningrad': [59.9311, 30.3609], // St. Petersburg
+      'St. Petersburg': [59.9311, 30.3609],
+      'Kiev': [50.4501, 30.5234],
+      'Kyiv': [50.4501, 30.5234],
+      'Minsk': [53.9045, 27.5615],
+      'Vilnius': [54.6872, 25.2797],
+      'Riga': [56.9496, 24.1052],
+      'Tallinn': [59.4370, 24.7536],
+      'Tashkent': [41.2995, 69.2401],
+      'Alma-Ata': [43.2220, 76.8512],
+      'Almaty': [43.2220, 76.8512],
+      'Tbilisi': [41.7151, 44.8271],
+      'Yerevan': [40.1792, 44.4991],
+      'Baku': [40.4093, 49.8671],
+      'Odessa': [46.4825, 30.7233],
+      'Kharkiv': [49.9935, 36.2304],
+      'Kharkov': [49.9935, 36.2304],
+      'Dnipro': [48.4647, 35.0462],
+      'Dnepropetrovsk': [48.4647, 35.0462],
+      'Lviv': [49.8397, 24.0297],
+      'Lvov': [49.8397, 24.0297],
+      'Novosibirsk': [55.0084, 82.9357],
+      'Yekaterinburg': [56.8431, 60.6454],
+      'Sverdlovsk': [56.8431, 60.6454],
+      'Nizhny Novgorod': [56.2965, 43.9361],
+      'Gorky': [56.2965, 43.9361],
+      'Samara': [53.2001, 50.1500],
+      'Kuibyshev': [53.2001, 50.1500],
+      'Omsk': [54.9884, 73.3242],
+      'Kazan': [55.8304, 49.0661],
+      'Rostov-on-Don': [47.2357, 39.7015],
+      'Ufa': [54.7388, 55.9721],
+      'Volgograd': [48.7080, 44.5133],
+      'Stalingrad': [48.7080, 44.5133],
+      'Perm': [58.0105, 56.2502],
+      'Molotov': [58.0105, 56.2502],
+      'Voronezh': [51.6720, 39.1843],
+      'Krasnoyarsk': [56.0184, 92.8672],
+      'Saratov': [51.5406, 46.0086],
+      'Tolyatti': [53.5303, 49.3461],
+      'Izhevsk': [56.8467, 53.2118],
+      'Yaroslavl': [57.6261, 39.8845],
+      'Barnaul': [53.3606, 83.7636],
+      'Vladivostok': [43.1056, 131.8735],
+      'Irkutsk': [52.2978, 104.2964],
+      'Khabarovsk': [48.4827, 135.0841],
+      'Orenburg': [51.7727, 55.0988],
+      'Novokuznetsk': [53.7557, 87.1099],
+      'Ryazan': [54.6269, 39.6916],
+      'Tyumen': [57.1522, 65.5272],
+      'Lipetsk': [52.6031, 39.5708],
+      'Penza': [53.2007, 45.0046],
+      'Tula': [54.1961, 37.6182],
+      'Kirov': [58.6035, 49.6679],
+      'Cheboksary': [56.1439, 47.2519],
+      'Kaliningrad': [54.7104, 20.4522],
+      'Königsberg': [54.7104, 20.4522],
+      'Bryansk': [53.2434, 34.3656],
+      'Kursk': [51.7373, 36.1873],
+      'Tver': [56.8587, 35.9176],
+      'Kalinin': [56.8587, 35.9176],
+      'Magnitogorsk': [53.4071, 59.0461],
+      'Murmansk': [68.9585, 33.0827],
+      'Arkhangelsk': [64.5401, 40.5433],
+      'Vologda': [59.2239, 39.8839],
+      'Petrozavodsk': [61.7849, 34.3469],
+      'Syktyvkar': [61.6681, 50.8067],
+      'Naryan-Mar': [67.6386, 53.0069],
+      'Salekhard': [66.5297, 66.6013],
+      'Khanty-Mansiysk': [61.0042, 69.0019]
+    };
+    
+    // Load data and create markers
+    fetch(baseUrl)
+      .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('loading-message').textContent = `Loaded ${data.length} dissidents`;
+        
+        // Group people by location
+        const locationGroups = {};
+        let mappedCount = 0;
+        
+        data.forEach(person => {
+          const location = person.Location;
+          if (location && location.trim()) {
+            // Try to find coordinates for this location
+            const coords = findCoordinates(location);
+            if (coords) {
+              if (!locationGroups[location]) {
+                locationGroups[location] = {
+                  coords: coords,
+                  people: []
+                };
+              }
+              locationGroups[location].people.push(person);
+              mappedCount++;
+            }
+          }
+        });
+        
+        // Create markers for each location
+        Object.entries(locationGroups).forEach(([location, group]) => {
+          const marker = L.marker(group.coords).addTo(map);
+          
+          // Create popup content
+          let popupContent = `<h4>${location}</h4>`;
+          popupContent += `<p><strong>${group.people.length} dissident(s)</strong></p>`;
+          
+          group.people.forEach(person => {
+            popupContent += `
+              <div style="border-top: 1px solid #eee; padding-top: 0.5em; margin-top: 0.5em;">
+                <div class="popup-name">${person['Name in English'] || 'Unknown'}</div>
+                ${person['Name (original)'] ? `<div class="popup-original">${person['Name (original)']}</div>` : ''}
+                <div class="popup-details">
+                  <strong>Gender:</strong> ${person.Sex === 'm' ? 'Male' : person.Sex === 'f' ? 'Female' : person.Sex || 'Unknown'}<br>
+                  <strong>Status:</strong> ${person['Assigned Social Status'] || 'Unknown'}<br>
+                  <strong>Field:</strong> ${person['Field of Activity'] || 'Unknown'}
+                </div>
+                ${person['Open Source Link (if available)'] ? 
+                  `<div class="popup-link"><a href="${person['Open Source Link (if available)']}" target="_blank">Learn More</a></div>` : 
+                  ''
+                }
+              </div>
+            `;
+          });
+          
+          marker.bindPopup(popupContent, {
+            maxWidth: 300,
+            maxHeight: 400
+          });
+        });
+        
+        document.getElementById('loading-message').textContent = 
+          `Showing ${mappedCount} of ${data.length} dissidents on map (${Object.keys(locationGroups).length} locations)`;
+        
+        // Fit map to show all markers
+        if (Object.keys(locationGroups).length > 0) {
+          const group = new L.featureGroup(Object.values(locationGroups).map(g => L.marker(g.coords)));
+          map.fitBounds(group.getBounds().pad(0.1));
+        }
+      })
+      .catch(error => {
+        console.error("Error loading data:", error);
+        document.getElementById('loading-message').textContent = "Error loading map data";
+      });
+    
+    // Function to find coordinates for a location
+    function findCoordinates(location) {
+      const cleanLocation = location.trim();
+      
+      // Direct match
+      if (cityCoordinates[cleanLocation]) {
+        return cityCoordinates[cleanLocation];
+      }
+      
+      // Try case-insensitive match
+      const lowerLocation = cleanLocation.toLowerCase();
+      for (const [city, coords] of Object.entries(cityCoordinates)) {
+        if (city.toLowerCase() === lowerLocation) {
+          return coords;
+        }
+      }
+      
+      // Try partial match
+      for (const [city, coords] of Object.entries(cityCoordinates)) {
+        if (city.toLowerCase().includes(lowerLocation) || lowerLocation.includes(city.toLowerCase())) {
+          return coords;
+        }
+      }
+      
+      return null;
+    }
+  </script>
+  </div>
+</body>
+</html> 

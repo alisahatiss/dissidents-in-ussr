@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Directory - Dissident Archive</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navigation">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo">Dissident Archive</a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link active">Directory</a></li>
+        <li><a href="letters.html" class="nav-link">Letters</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+        <!-- <li><a href="map.html" class="nav-link">Map</a></li> -->
+      </ul>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    <h1>Dissidents in the USSR</h1>
+
+    <p>
+      A collection of Soviet-era dissidents and their biographical information.
+    </p>
+
+  <div class="search-container">
+    <input 
+      type="text" 
+      id="search-input" 
+      class="search-input" 
+      placeholder="Search by name, location, field, or status..."
+    >
+  </div>
+
+  <div class="controls-container">
+    <div class="per-page-control">
+      <label for="per-page-select">Show per page:</label>
+      <select id="per-page-select" class="per-page-select">
+        <option value="10" selected>10</option>
+        <option value="30">30</option>
+        <option value="100">100</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="results-info" id="results-info"></div>
+
+  <ul class="people-grid" id="people-list"></ul>
+
+  <div class="pagination" id="pagination"></div>
+
+  <script>
+    const baseUrl = "https://api.sheetbest.com/sheets/ce77c6b7-9dac-4a29-86f5-ce6708bb2f37";
+    let allData = [];
+    let currentData = [];
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    // Load all data initially
+    function loadAllData() {
+      fetch(baseUrl)
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
+        })
+        .then(data => {
+          allData = data;
+          currentData = data;
+          currentPage = 1;
+          displayPaginatedPeople();
+        })
+        .catch(error => {
+          console.error("Error fetching JSON:", error);
+          const list = document.getElementById("people-list");
+          list.innerHTML = '<li style="text-align: center; color: #666;">Error loading data. Please try again later.</li>';
+        });
+    }
+
+    // Search using SheetBest API with proper filtering
+    function searchWithAPI(searchTerm) {
+      if (!searchTerm.trim()) {
+        // If search is empty, load all data
+        loadAllData();
+        return;
+      }
+
+      // Try searching by Name in English first (most common search)
+      const nameSearchUrl = `${baseUrl}/Name%20in%20English/*${encodeURIComponent(searchTerm)}*`;
+      
+      fetch(nameSearchUrl)
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
+        })
+        .then(data => {
+          // If we found results by name, display them
+          if (data && data.length > 0) {
+            currentData = data;
+            currentPage = 1;
+            displayPaginatedPeople();
+          } else {
+            // If no results by name, try other fields using client-side search
+            searchClientSide(searchTerm);
+          }
+        })
+        .catch(error => {
+          console.error("Error searching by name:", error);
+          // Fallback to client-side search
+          searchClientSide(searchTerm);
+        });
+    }
+
+    // Enhanced client-side search
+    function searchClientSide(searchTerm) {
+      const filtered = allData.filter(person => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          (person['Name in English'] && person['Name in English'].toLowerCase().includes(searchLower)) ||
+          (person['Name (original)'] && person['Name (original)'].toLowerCase().includes(searchLower)) ||
+          (person['Location'] && person['Location'].toLowerCase().includes(searchLower)) ||
+          (person['Field of Activity'] && person['Field of Activity'].toLowerCase().includes(searchLower)) ||
+          (person['Assigned Social Status'] && person['Assigned Social Status'].toLowerCase().includes(searchLower)) ||
+          (person['Written Caption'] && person['Written Caption'].toLowerCase().includes(searchLower))
+        );
+      });
+      currentData = filtered;
+      currentPage = 1;
+      displayPaginatedPeople();
+    }
+
+    function displayPaginatedPeople() {
+      const totalItems = currentData.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const pageData = currentData.slice(startIndex, endIndex);
+
+      displayPeople(pageData);
+      updateResultsInfo(totalItems, currentPage, totalPages);
+      updatePagination(totalPages);
+    }
+
+    function displayPeople(data) {
+      const list = document.getElementById("people-list");
+      list.innerHTML = '';
+
+      if (data.length === 0) {
+        list.innerHTML = '<li class="no-results">No results found. Try a different search term.</li>';
+        return;
+      }
+
+      data.forEach(person => {
+        const li = document.createElement("li");
+        li.className = "person-card";
+
+        const photoHtml = person.Photo ? 
+          `<img class="person-photo" src="${person.Photo}" alt="${person['Name in English']}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+           <div class="no-photo" style="display: none;">👤</div>` :
+          `<div class="no-photo">👤</div>`;
+
+        const linkHtml = person['Open Source Link (if available)'] ? 
+          `<div class="person-link">
+             <a href="${person['Open Source Link (if available)']}" target="_blank">Learn More</a>
+           </div>` : '';
+
+        li.innerHTML = `
+          ${photoHtml}
+          <div class="person-name">${person['Name in English'] || 'Unknown'}</div>
+          <div class="person-name-original">${person['Name (original)'] || ''}</div>
+          <div class="person-details">
+               <div class="detail-row">
+              <span class="detail-label">Gender:</span>
+              <span class="detail-value">${person.Sex === 'm' ? 'Male' : person.Sex === 'f' ? 'Female' : person.Sex || 'Unknown'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Location:</span>
+              <span class="detail-value">${person.Location || 'Unknown'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Status:</span>
+              <span class="detail-value">${person['Assigned Social Status'] || 'Unknown'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Field:</span>
+              <span class="detail-value">${person['Field of Activity'] || 'Unknown'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Caption:</span>
+              <span class="detail-value">${person['Written Caption'] || 'N/A'}</span>
+            </div>
+          </div>
+          ${linkHtml}
+        `;
+
+        list.appendChild(li);
+      });
+    }
+
+    function updateResultsInfo(totalItems, currentPage, totalPages) {
+      const resultsInfo = document.getElementById("results-info");
+      const startItem = (currentPage - 1) * itemsPerPage + 1;
+      const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+      
+      if (totalItems === 0) {
+        resultsInfo.innerHTML = '';
+      } else {
+        resultsInfo.innerHTML = `Showing ${startItem}-${endItem} of ${totalItems} dissidents (Page ${currentPage} of ${totalPages})`;
+      }
+    }
+
+    function updatePagination(totalPages) {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      // Previous button
+      if (currentPage > 1) {
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "← Previous";
+        prevBtn.className = "page-btn prev-btn";
+        prevBtn.onclick = () => goToPage(currentPage - 1);
+        pagination.appendChild(prevBtn);
+      }
+
+      // Page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      // First page + ellipsis if needed
+      if (startPage > 1) {
+        const firstBtn = document.createElement("button");
+        firstBtn.textContent = "1";
+        firstBtn.className = "page-btn";
+        firstBtn.onclick = () => goToPage(1);
+        pagination.appendChild(firstBtn);
+
+        if (startPage > 2) {
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
+          ellipsis.className = "ellipsis";
+          pagination.appendChild(ellipsis);
+        }
+      }
+
+      // Page number buttons
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.textContent = i;
+        pageBtn.className = i === currentPage ? "page-btn active" : "page-btn";
+        pageBtn.onclick = () => goToPage(i);
+        pagination.appendChild(pageBtn);
+      }
+
+      // Last page + ellipsis if needed
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
+          ellipsis.className = "ellipsis";
+          pagination.appendChild(ellipsis);
+        }
+
+        const lastBtn = document.createElement("button");
+        lastBtn.textContent = totalPages;
+        lastBtn.className = "page-btn";
+        lastBtn.onclick = () => goToPage(totalPages);
+        pagination.appendChild(lastBtn);
+      }
+
+      // Next button
+      if (currentPage < totalPages) {
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "Next →";
+        nextBtn.className = "page-btn next-btn";
+        nextBtn.onclick = () => goToPage(currentPage + 1);
+        pagination.appendChild(nextBtn);
+      }
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      displayPaginatedPeople();
+      // Scroll to top when changing pages
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function changeItemsPerPage(newItemsPerPage) {
+      itemsPerPage = parseInt(newItemsPerPage);
+      currentPage = 1; // Reset to first page
+      displayPaginatedPeople();
+    }
+
+    // Search input event listener
+    let searchTimeout;
+    document.getElementById("search-input").addEventListener("input", function(e) {
+      clearTimeout(searchTimeout);
+      const searchTerm = e.target.value;
+      
+      // Debounce search to avoid too many API calls
+      searchTimeout = setTimeout(() => {
+        searchWithAPI(searchTerm);
+      }, 300);
+    });
+
+    // Per page selector event listener
+    document.getElementById("per-page-select").addEventListener("change", function(e) {
+      changeItemsPerPage(e.target.value);
+    });
+
+    // Load initial data
+    loadAllData();
+  </script>
+  </div>
+</body>
+</html>
